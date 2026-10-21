@@ -49,8 +49,11 @@ h2{font-size:1.45rem;font-weight:700}
 
 .poster{display:block;width:100%;height:auto;border-radius:8px;
   box-shadow:0 0 0 1px var(--line),0 14px 30px -16px rgba(90,30,0,.5);background:#fff}
-.editor{display:block;width:100%;max-width:360px;margin:0 auto;aspect-ratio:360/470;height:auto;border-radius:14px;
-  background:#f3e6cc;box-shadow:0 0 0 1px var(--line);touch-action:none}
+.editor{display:block;width:auto;max-width:100%;height:min(50vh,440px);aspect-ratio:360/470;margin:0 auto;border-radius:14px;
+  background:#f3e6cc;box-shadow:0 0 0 1px var(--line);touch-action:pan-y}
+.editor.active{touch-action:none}
+.pick{-webkit-user-select:none;user-select:none}
+#s2 .pick{margin:0 0 12px}
 .how{list-style:none;padding:0;margin:16px 0 0;display:grid;gap:8px}
 .how li{display:flex;gap:10px;align-items:center;background:var(--panel);border:1px solid var(--line);border-radius:12px;padding:10px 12px}
 .how b{flex:none;width:28px;height:28px;border-radius:50%;background:var(--maroon);color:var(--onMaroon);display:grid;place-items:center;font-size:.9rem}
@@ -114,10 +117,10 @@ button{cursor:pointer}
   <section class="step" id="s2">
     <h2>તમારો ફોટો પસંદ કરો</h2>
     <p class="sub">ફોટો ખસેડવા આંગળીથી ડ્રેગ કરો, મોટો-નાનો કરવા ઝૂમ વાપરો.</p>
-    <canvas class="editor" id="ed2" aria-label="ફોટો ગોઠવો"></canvas>
-    <button class="pick" id="pick" type="button">📷 <span id="pickTxt">ગેલેરીમાંથી ફોટો પસંદ કરો</span></button>
-    <input type="file" id="file" accept="image/*" style="position:absolute;width:1px;height:1px;opacity:0;overflow:hidden;pointer-events:none" tabindex="-1" aria-hidden="true">
+    <label class="pick" id="pick" for="file" role="button">📷 <span id="pickTxt">ગેલેરીમાંથી ફોટો પસંદ કરો</span></label>
+    <input type="file" id="file" accept="image/*" style="position:absolute;left:0;top:0;width:1px;height:1px;opacity:0;overflow:hidden" tabindex="-1" aria-hidden="true">
     <p class="tip" id="photoMsg" role="status"></p>
+    <canvas class="editor" id="ed2" aria-label="ફોટો ગોઠવો"></canvas>
     <div class="tools" id="tools" hidden>
       <div class="chips">
         <button class="chip sel" type="button" id="fit">આખો ફોટો</button>
@@ -267,7 +270,7 @@ button{cursor:pointer}
   $('again').addEventListener('click', function(){ go(2); });
 
   // ---------- photo ----------
-  $('pick').addEventListener('click', function(){ $('file').click(); });
+  // the pick control is a <label for="file">, so the phone opens the gallery natively
   var picking = false;
   function photoMsg(t){ $('photoMsg').textContent = t || ''; }
   // Shrink very large phone photos so mobile browsers don't run out of memory
@@ -292,7 +295,7 @@ button{cursor:pointer}
       .catch(function(){ return viaBitmap(f); })
       .then(function(src){
         var c = toCanvas(src);
-        photo = c; makeBlur(c); setMode('fit');
+        photo = c; makeBlur(c); setMode('fit'); ed.classList.add('active');
         $('tools').hidden = false; $('pickTxt').textContent = 'બીજો ફોટો પસંદ કરો';
         photoMsg(''); updateNext(); render();
       })
@@ -327,7 +330,7 @@ button{cursor:pointer}
   function toPoster(e){ var r = ed.getBoundingClientRect();
     return {x: CROP.x + (e.clientX - r.left) / r.width * CROP.w, y: CROP.y + (e.clientY - r.top) / r.height * CROP.h}; }
   ed.addEventListener('pointerdown', function(e){
-    if (!photo){ $('file').click(); return; }
+    if (!photo) return; // let the page scroll normally until a photo is chosen
     e.preventDefault();
     pts[e.pointerId] = toPoster(e); ed.setPointerCapture(e.pointerId);
     var ids = Object.keys(pts);
